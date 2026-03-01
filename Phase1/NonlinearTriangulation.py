@@ -4,14 +4,14 @@ from LinearTriangulation import camera_projection_matrix
 
 
 def project(P: np.ndarray, X: np.ndarray) -> np.ndarray:
-    """_summary_
+    """Project a 3D point onto the image plane using a projection matrix.
 
     Args:
-        P (np.ndarray): _description_
-        X (np.ndarray): _description_
+        P (np.ndarray): Projection matrix (shape: (3, 4)).
+        X (np.ndarray): 3D point in world coordinates (shape: (3,)).
 
     Returns:
-        np.ndarray: _description_
+        np.ndarray: Projected 2D point in image plane (shape: (2,)).
     """
     X_h = np.append(X, 1.0)
     x_h = P @ X_h
@@ -20,14 +20,22 @@ def project(P: np.ndarray, X: np.ndarray) -> np.ndarray:
 
 
 def residuals(X, P1, P2, x1, x2):
-    """_summary_
+    """Calculate the reprojection residuals for nonlinear triangulation.
 
-    Args:
-        X (_type_): _description_
-        P1 (_type_): _description_
-        P2 (_type_): _description_
-        x1 (_type_): _description_
-        x2 (_type_): _description_
+    Computes the difference between observed image points and their projections
+    using the estimated 3D point. This is used for optimization in nonlinear
+    triangulation to minimize the reprojection error across both cameras.
+
+        X (np.ndarray): 3D point in world coordinates (shape: (3,) or (4,)).
+        P1 (np.ndarray): Projection matrix for camera 1 (shape: (3, 4)).
+        P2 (np.ndarray): Projection matrix for camera 2 (shape: (3, 4)).
+        x1 (np.ndarray): Observed 2D point in camera 1 image plane (shape: (2,)).
+        x2 (np.ndarray): Observed 2D point in camera 2 image plane (shape: (2,)).
+
+    Returns:
+        np.ndarray: Vector of residuals with shape (4,) containing the differences
+                   [u1_error, v1_error, u2_error, v2_error] where u and v are
+                   image coordinates in cameras 1 and 2 respectively.
     """
     x1_hat = project(P1, X)
     x2_hat = project(P2, X)
@@ -52,20 +60,20 @@ def NonLinearTriangulation(
     x2: np.ndarray,
     X_init: np.ndarray,
 ) -> np.ndarray:
-    """_summary_
+    """Refine 3D points using nonlinear least squares optimization.
 
     Args:
-        K (np.ndarray): _description_
-        C1 (np.ndarray): _description_
-        R1 (np.ndarray): _description_
-        C2 (np.ndarray): _description_
-        R2 (np.ndarray): _description_
-        x1 (np.ndarray): _description_
-        x2 (np.ndarray): _description_
-        X_init (np.ndarray): _description_
+        K (np.ndarray): Camera intrinsic matrix (3x3)
+        C1 (np.ndarray): Camera 1 center (3,)
+        R1 (np.ndarray): Camera 1 rotation matrix (3x3)
+        C2 (np.ndarray): Camera 2 center (3,)
+        R2 (np.ndarray): Camera 2 rotation matrix (3x3)
+        x1 (np.ndarray): Image points in camera 1 (Nx2)
+        x2 (np.ndarray): Image points in camera 2 (Nx2)
+        X_init (np.ndarray): Initial 3D point estimates (Nx3)
 
     Returns:
-        np.ndarray: _description_
+        np.ndarray: Refined 3D points (Nx3)
     """
     assert x1.shape == x2.shape
     assert X_init.shape[0] == x1.shape[0]
